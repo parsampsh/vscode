@@ -1122,7 +1122,7 @@ export class RunStateRenderer {
 			DOM.reset(this.element, renderIcon(syncing));
 			this.spinnerTimer = setTimeout(() => {
 				this.spinnerTimer = undefined;
-				if (this.pendingNewState) {
+				if (this.pendingNewState && this.pendingNewState !== runState) {
 					this.renderState(this.pendingNewState, this.pendingLastRunSuccess);
 					this.pendingNewState = undefined;
 				}
