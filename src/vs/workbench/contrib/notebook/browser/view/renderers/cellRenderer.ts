@@ -48,7 +48,7 @@ import { StatefulMarkdownCell } from 'vs/workbench/contrib/notebook/browser/view
 import { CodeCellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/codeCellViewModel';
 import { MarkdownCellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/markdownCellViewModel';
 import { CellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/notebookViewModel';
-import { CellEditType, CellKind, NotebookCellMetadata, NotebookCellRunState, NotebookCellsChangeType, ShowCellStatusBarKey } from 'vs/workbench/contrib/notebook/common/notebookCommon';
+import { CellEditType, CellKind, NotebookCellMetadata, NotebookCellExecutionState, NotebookCellsChangeType, ShowCellStatusBarKey } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { CodiconActionViewItem, createAndFillInActionBarActionsWithVerticalSeparators, VerticalSeparator, VerticalSeparatorViewItem } from './cellActionView';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { errorStateIcon, successStateIcon, unfoldIcon } from 'vs/workbench/contrib/notebook/browser/notebookIcons';
@@ -882,7 +882,7 @@ export class CodeCellRenderer extends AbstractCellRenderer implements IListRende
 
 		templateData.cellRunState.renderState(element.metadata?.runState, element.metadata?.lastRunSuccess);
 
-		if (metadata.runState === NotebookCellRunState.Running) {
+		if (metadata.runState === NotebookCellExecutionState.Executing) {
 			if (metadata.runStartTime) {
 				templateData.elementDisposables.add(templateData.timer.start(metadata.runStartTime));
 			} else {
@@ -898,7 +898,7 @@ export class CodeCellRenderer extends AbstractCellRenderer implements IListRende
 			editorOptions.setGlyphMargin(metadata.breakpointMargin);
 		}
 
-		if (metadata.runState === NotebookCellRunState.Running) {
+		if (metadata.runState === NotebookCellExecutionState.Executing) {
 			templateData.progressBar.infinite().show(500);
 		} else {
 			templateData.progressBar.hide();
@@ -1093,7 +1093,7 @@ export class RunStateRenderer {
 	private static readonly MIN_SPINNER_TIME = 200;
 
 	private spinnerTimer: any | undefined;
-	private pendingNewState: NotebookCellRunState | undefined;
+	private pendingNewState: NotebookCellExecutionState | undefined;
 	private pendingLastRunSuccess: boolean | undefined;
 
 	constructor(private readonly element: HTMLElement) {
@@ -1107,18 +1107,18 @@ export class RunStateRenderer {
 		}
 	}
 
-	renderState(runState: NotebookCellRunState = NotebookCellRunState.Idle, lastRunSuccess: boolean | undefined = undefined) {
+	renderState(runState: NotebookCellExecutionState = NotebookCellExecutionState.Idle, lastRunSuccess: boolean | undefined = undefined) {
 		if (this.spinnerTimer) {
 			this.pendingNewState = runState;
 			this.pendingLastRunSuccess = lastRunSuccess;
 			return;
 		}
 
-		if (runState === NotebookCellRunState.Idle && lastRunSuccess) {
+		if (runState === NotebookCellExecutionState.Idle && lastRunSuccess) {
 			DOM.reset(this.element, renderIcon(successStateIcon));
-		} else if (runState === NotebookCellRunState.Idle && !lastRunSuccess) {
+		} else if (runState === NotebookCellExecutionState.Idle && !lastRunSuccess) {
 			DOM.reset(this.element, renderIcon(errorStateIcon));
-		} else if (runState === NotebookCellRunState.Running) {
+		} else if (runState === NotebookCellExecutionState.Executing) {
 			DOM.reset(this.element, renderIcon(syncing));
 			this.spinnerTimer = setTimeout(() => {
 				this.spinnerTimer = undefined;
@@ -1127,14 +1127,14 @@ export class RunStateRenderer {
 					this.pendingNewState = undefined;
 				}
 			}, RunStateRenderer.MIN_SPINNER_TIME);
-		} else if (runState === NotebookCellRunState.Pending) {
+		} else if (runState === NotebookCellExecutionState.Pending) {
 			// Not spinning
 			DOM.reset(this.element, renderIcon(Codicons.Codicon.sync));
 		} else {
 			this.element.innerText = '';
 		}
 
-		if (runState === NotebookCellRunState.Idle && typeof lastRunSuccess !== 'boolean') {
+		if (runState === NotebookCellExecutionState.Idle && typeof lastRunSuccess !== 'boolean') {
 			DOM.hide(this.element);
 		} else {
 			this.element.style.display = 'flex';
